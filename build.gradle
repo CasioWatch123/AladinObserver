@@ -1,0 +1,29 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+application {
+    mainClass = 'com.github.CasioWatch123.AladinObserver.Main'
+}
+
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+
+    implementation("org.jsoup:jsoup:1.21.2")
+    implementation("commons-io:commons-io:2.21.0")
+    implementation("com.google.code.gson:gson:2.13.2")
+    implementation("org.apache.commons:commons-imaging:1.0.0-alpha6")
+}
+
+test {
+    useJUnitPlatform()
+}
