@@ -5,7 +5,7 @@ import com.github.CasioWatch123.AladinObserver.model.TTBKeyHolder;
 import com.github.CasioWatch123.AladinObserver.model.TTBKeyService;
 import com.github.CasioWatch123.AladinObserver.model.offshop.impl.products.exceptions.AladinAPIException;
 import com.github.CasioWatch123.AladinObserver.model.offshop.impl.products.exceptions.ProductUpdateException;
-import com.github.CasioWatch123.AladinObserver.model.offshop.impl.products.history.CheckResult;
+import com.github.CasioWatch123.AladinObserver.model.offshop.impl.products.history.OffshopCheckResult;
 import com.github.CasioWatch123.AladinObserver.model.offshop.impl.products.history.HistoryObjectDeque;
 import com.github.CasioWatch123.AladinObserver.model.offshop.impl.products.history.HistoryPolicies;
 import com.github.CasioWatch123.AladinObserver.model.ModelPolicies;
@@ -47,7 +47,9 @@ public abstract class AbstractAladinProduct implements AladinProduct{
     
     protected static final TTBKeyService TTB_KEY_SERVICE = TTBKeyHolder.getInstance();
     
-    protected AbstractAladinProduct(HistoryObjectDeque<CheckResult> historyObjectDeque, 
+    
+    protected OffshopCheckResult previousOffshopCheckResult;
+    protected AbstractAladinProduct(HistoryObjectDeque<OffshopCheckResult> historyObjectDeque, 
                                     URI imageURI, 
                                     String itemId, 
                                     String itemName, 
@@ -59,7 +61,7 @@ public abstract class AbstractAladinProduct implements AladinProduct{
         this.historyDeque = generateHistoryDeque(historyObjectDeque);
     }
     
-    protected HistoryDeque generateHistoryDeque(HistoryObjectDeque<CheckResult> historyObjectList) {
+    protected HistoryDeque generateHistoryDeque(HistoryObjectDeque<OffshopCheckResult> historyObjectList) {
         HistoryDeque historyDeque = new HistoryDeque();
         //Initialize history deque based on execution history            
         
@@ -71,11 +73,12 @@ public abstract class AbstractAladinProduct implements AladinProduct{
                     }
                 });
         
+        this.previousOffshopCheckResult = historyDeque.getDeque().peekFirst();
         return historyDeque;
     }
     
     @Override
-    public CompletableFuture<CheckResult> updateAsync(Executor asyncExecutor) {
+    public CompletableFuture<OffshopCheckResult> updateAsync(Executor asyncExecutor) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(getUpdateURI())
@@ -102,13 +105,18 @@ public abstract class AbstractAladinProduct implements AladinProduct{
                                             .getAsString())
                                     .toList();
 
-                            CheckResult result;
+                            OffshopCheckResult result;
+                            
+                            this.previousOffshopCheckResult = historyDeque.getDeque().peekFirst();
+                            
                             if (offShopList.isEmpty()) {
-                                result = CheckResult.getEmptyCheckResult(itemId);
+                                result = OffshopCheckResult.getEmptyCheckResult(itemId);
+                                historyDeque.addHistoryFirst(OffshopCheckResult.getEmptyCheckResult(itemId));
                             } else {
-                                result = new CheckResult(itemId, offShopList, LocalDateTime.now().withNano(0));
+                                result = new OffshopCheckResult(itemId, offShopList, LocalDateTime.now().withNano(0));
                                 historyDeque.addHistoryFirst(result);
                             }
+                            
                             return result;
                         } catch (AladinAPIException | JsonSyntaxException e) {
                             throw new ProductUpdateException(e);
@@ -116,13 +124,13 @@ public abstract class AbstractAladinProduct implements AladinProduct{
                     }, asyncExecutor)
                     .exceptionally(e -> {
                         Logger.getInstance().writeLog(e);
-                        return CheckResult.getExceptionalCheckResult(itemId);
+                        return OffshopCheckResult.getExceptionalCheckResult(itemId);
                     });
         } catch (RejectedExecutionException e) {
-            return CompletableFuture.completedFuture(CheckResult.getExceptionalCheckResult(itemId));
+            return CompletableFuture.completedFuture(OffshopCheckResult.getExceptionalCheckResult(itemId));
         } catch (URISyntaxException e) {
             Logger.getInstance().writeLog(e);
-            return CompletableFuture.completedFuture(CheckResult.getExceptionalCheckResult(itemId));
+            return CompletableFuture.completedFuture(OffshopCheckResult.getExceptionalCheckResult(itemId));
         }
     }
     
@@ -137,12 +145,12 @@ public abstract class AbstractAladinProduct implements AladinProduct{
     }
     
     @Override
-    public Deque<CheckResult> getHistories() {
+    public Deque<OffshopCheckResult> getHistories() {
         return this.historyDeque.getDeque();
     }
 
     @Override
-    public CheckResult getHistoryFirst() {
+    public OffshopCheckResult getHistoryFirst() {
         return historyDeque.getDeque().getFirst();
     }
     
@@ -151,24 +159,29 @@ public abstract class AbstractAladinProduct implements AladinProduct{
         return this.itemImage;
     }
 
+    @Override
+    public OffshopCheckResult getPreviousCheckResult() {
+        return this.previousOffshopCheckResult;
+    }
+    
     protected abstract URI getUpdateURI() throws URISyntaxException;
 
     protected static class HistoryDeque {
-        private final AtomicReference<Deque<CheckResult>> historyRef;
+        private final AtomicReference<Deque<OffshopCheckResult>> historyRef;
     
         public HistoryDeque() {
             historyRef = new AtomicReference<>(new ArrayDeque<>());
         }
     
-        public void addHistoryLast(CheckResult checkResult) {
+        public void addHistoryLast(OffshopCheckResult offshopCheckResult) {
             while (true) {
-                Deque<CheckResult> oldDeque = historyRef.get();
-                Deque<CheckResult> newDeque = new ArrayDeque<>(oldDeque);
+                Deque<OffshopCheckResult> oldDeque = historyRef.get();
+                Deque<OffshopCheckResult> newDeque = new ArrayDeque<>(oldDeque);
                 if (newDeque.size() >= HistoryPolicies.MAX_HISTORY_DEQUE_SIZE) {
                     return;
                 }
     
-                newDeque.addLast(checkResult);
+                newDeque.addLast(offshopCheckResult);
                 
                 if (historyRef.compareAndSet(oldDeque, newDeque)) {
                     return;
@@ -176,15 +189,15 @@ public abstract class AbstractAladinProduct implements AladinProduct{
             }
         }
     
-        public void addHistoryFirst(CheckResult checkResult) {
+        public void addHistoryFirst(OffshopCheckResult offshopCheckResult) {
             while (true) {
-                Deque<CheckResult> oldDeque = historyRef.get();
-                Deque<CheckResult> newDeque = new ArrayDeque<>(oldDeque);
+                Deque<OffshopCheckResult> oldDeque = historyRef.get();
+                Deque<OffshopCheckResult> newDeque = new ArrayDeque<>(oldDeque);
                 if (newDeque.size() >= HistoryPolicies.MAX_HISTORY_DEQUE_SIZE) {
                     newDeque.removeLast();
                 }
     
-                newDeque.addFirst(checkResult);
+                newDeque.addFirst(offshopCheckResult);
                 
                 if (historyRef.compareAndSet(oldDeque, newDeque)) {
                     return;
@@ -192,7 +205,7 @@ public abstract class AbstractAladinProduct implements AladinProduct{
             }
         }
     
-        public Deque<CheckResult> getDeque() {
+        public Deque<OffshopCheckResult> getDeque() {
             return new ArrayDeque<>(historyRef.get());
         }
     }

@@ -1,12 +1,12 @@
 package com.github.CasioWatch123.AladinObserver.model.offshop.impl.products;
 
-import com.github.CasioWatch123.AladinObserver.model.offshop.impl.products.history.CheckResult;
+import com.github.CasioWatch123.AladinObserver.model.offshop.impl.products.history.OffshopCheckResult;
 
 import java.awt.*;
 import java.util.Deque;
 
 public interface AladinProductData {
-
+    OffshopCheckResult getPreviousCheckResult();
 
     Image itemImage();
 
@@ -14,7 +14,7 @@ public interface AladinProductData {
 
     String itemName();
 
-    Deque<CheckResult> getHistories();
+    Deque<OffshopCheckResult> getHistories();
     
-    CheckResult getHistoryFirst();
+    OffshopCheckResult getHistoryFirst();
 }

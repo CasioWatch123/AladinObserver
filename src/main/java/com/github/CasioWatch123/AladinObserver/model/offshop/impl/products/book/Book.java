@@ -5,7 +5,7 @@ import com.github.CasioWatch123.AladinObserver.model.offshop.impl.products.Abstr
 import com.github.CasioWatch123.AladinObserver.model.offshop.impl.products.AladinProduct;
 import com.github.CasioWatch123.AladinObserver.model.offshop.impl.products.exceptions.AladinAPIException;
 import com.github.CasioWatch123.AladinObserver.model.offshop.impl.products.exceptions.ProductInitializeException;
-import com.github.CasioWatch123.AladinObserver.model.offshop.impl.products.history.CheckResult;
+import com.github.CasioWatch123.AladinObserver.model.offshop.impl.products.history.OffshopCheckResult;
 import com.github.CasioWatch123.AladinObserver.model.offshop.impl.products.history.HistoryObjectDeque;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
@@ -35,7 +35,7 @@ public class Book  extends AbstractAladinProduct implements AladinProduct {
         }
     }
     
-    private Book(HistoryObjectDeque<CheckResult> historyObjectDeque,
+    private Book(HistoryObjectDeque<OffshopCheckResult> historyObjectDeque,
                  URI imageURI,
                  String itemId,
                  String itemName,
@@ -43,7 +43,7 @@ public class Book  extends AbstractAladinProduct implements AladinProduct {
         super(historyObjectDeque, imageURI, itemId, itemName, defaultImage);
     }
     
-    public static Book create(String itemId, HistoryObjectDeque<CheckResult> historyObjectDeque) throws InterruptedException, ProductInitializeException {
+    public static Book create(String itemId, HistoryObjectDeque<OffshopCheckResult> historyObjectDeque) throws InterruptedException, ProductInitializeException {
         try {
             URI itemInfoRequestURI = new URI("http://www.aladin.co.kr/ttb/api/ItemLookUp.aspx?ttbkey=" + 
                     TTB_KEY_SERVICE.getTTBKey() +
@@ -66,7 +66,6 @@ public class Book  extends AbstractAladinProduct implements AladinProduct {
                 throw new AladinAPIException("(itemId)" + itemId, responseJson.get("errorMessage").getAsString());
             }
 
-            URI updateURI;
             URI imageURI;
             String itemName;
             Image cover;

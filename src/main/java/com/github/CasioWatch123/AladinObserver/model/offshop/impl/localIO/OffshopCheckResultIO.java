@@ -4,7 +4,7 @@ import com.github.CasioWatch123.AladinObserver.log.Logger;
 import com.github.CasioWatch123.AladinObserver.model.ModelPolicies;
 import com.github.CasioWatch123.AladinObserver.model.offshop.impl.localIO.serialization.LocalDateTimeDeserializer;
 import com.github.CasioWatch123.AladinObserver.model.offshop.impl.localIO.serialization.LocalDateTimeSerializer;
-import com.github.CasioWatch123.AladinObserver.model.offshop.impl.products.history.CheckResult;
+import com.github.CasioWatch123.AladinObserver.model.offshop.impl.products.history.OffshopCheckResult;
 import com.github.CasioWatch123.AladinObserver.model.offshop.impl.products.history.HistoryObjectDeque;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -19,9 +19,9 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 
-public class CheckResultIO implements IO<CheckResult> {
+public class OffshopCheckResultIO implements IO<OffshopCheckResult> {
     private static final Path DIR = ModelPolicies.LOCAL_REPO_DIR;
-    private static final Path FILE_PATH = Path.of(DIR.toString(), "execution history.txt");
+    private static final Path FILE_PATH = Path.of(DIR.toString(), "execution history-off shop.txt");
 
     private static final Gson GSON_PARSER = new GsonBuilder()
             .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeSerializer())
@@ -35,22 +35,22 @@ public class CheckResultIO implements IO<CheckResult> {
                 Files.createFile(FILE_PATH);
             } catch (IOException e) {
                 //로그 시스템 구축 실패. 프로그램 종료
-                System.err.println( e);
+                System.err.println(e);
             }
         }
     }
-    private static final CheckResultIO INSTANCE = new CheckResultIO();
+    private static final OffshopCheckResultIO INSTANCE = new OffshopCheckResultIO();
     
-    private CheckResultIO() {}
+    private OffshopCheckResultIO() {}
     
     @Override
-    public synchronized HistoryObjectDeque<CheckResult> readLines(int n) {
+    public synchronized HistoryObjectDeque<OffshopCheckResult> readLines(int n) {
         try (ReversedLinesFileReader reader = ReversedLinesFileReader
                 .builder()
                 .setPath(FILE_PATH)
                 .get()) {
 
-            HistoryObjectDeque<CheckResult> result = new HistoryObjectDeque<>();
+            HistoryObjectDeque<OffshopCheckResult> result = new HistoryObjectDeque<>();
 
             while (result.getDeque().size() < n) {
                 String line = reader.readLine();
@@ -58,7 +58,7 @@ public class CheckResultIO implements IO<CheckResult> {
                     break;
                 }
                 if (isValidLine(line)) {
-                    Type type = new TypeToken<HistoryObject<CheckResult>>() {}.getType();
+                    Type type = new TypeToken<HistoryObject<OffshopCheckResult>>() {}.getType();
                     result.addHistoryLast(GSON_PARSER.fromJson(line, type));
                 }
             }
@@ -66,12 +66,12 @@ public class CheckResultIO implements IO<CheckResult> {
         } catch (IOException e) {
             System.err.println(e);
             Logger.getInstance().writeLog(e);
-            return new HistoryObjectDeque<CheckResult>();
+            return new HistoryObjectDeque<>();
         }
     }
 
     @Override
-    public synchronized void write(HistoryObject<CheckResult> detail) {
+    public synchronized void write(HistoryObject<OffshopCheckResult> detail) {
         String str = GSON_PARSER.toJson(detail) + "\n";
         
         try {
@@ -86,7 +86,7 @@ public class CheckResultIO implements IO<CheckResult> {
     }
     
     private static boolean isValidLine(String line) {
-        Type type = new TypeToken<HistoryObject>() {}.getType();
+        Type type = new TypeToken<HistoryObject<OffshopCheckResult>>() {}.getType();
         try {
             GSON_PARSER.fromJson(line, type);
             return true;
@@ -95,7 +95,7 @@ public class CheckResultIO implements IO<CheckResult> {
         }
     }
     
-    public static CheckResultIO getInstance() {
+    public static OffshopCheckResultIO getInstance() {
         return INSTANCE;
     }
 }

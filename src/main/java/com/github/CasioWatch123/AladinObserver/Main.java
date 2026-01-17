@@ -1,9 +1,8 @@
 package com.github.CasioWatch123.AladinObserver;
 
 import com.github.CasioWatch123.AladinObserver.log.Logger;
-import com.github.CasioWatch123.AladinObserver.model.TTBKeyHolder;
-import com.github.CasioWatch123.AladinObserver.model.offshop.OffShopProductTray;
-import com.github.CasioWatch123.AladinObserver.model.offshop.impl.products.history.CheckResult;
+import com.github.CasioWatch123.AladinObserver.model.offshop.OffShopProductTrayModel;
+import com.github.CasioWatch123.AladinObserver.model.offshop.impl.products.history.OffshopCheckResult;
 import com.github.CasioWatch123.AladinObserver.model.offshop.impl.tray.ProductTrayImpl;
 import com.google.gson.Gson;
 
@@ -22,30 +21,33 @@ public class Main {
     
     public static void main(String[] args) {
         System.out.println("initializing...");
-        OffShopProductTray model = new OffShopProductTray(new ProductTrayImpl());
-
-        model.addProduct(KOSMOS);
-        model.addProduct(GoF);
+        OffShopProductTrayModel model = new OffShopProductTrayModel(new ProductTrayImpl());
 
         System.out.println("subscribing...");
+        
         model.subscribeTray(keySet -> {
             keySet.forEach(key -> {
                 model.getProductData(key)
                         .thenAccept(aladinProductData -> {
-                            CheckResult checkResult = aladinProductData.getHistoryFirst();
-                            System.out.println(checkResult.getTimestamp().withNano(0) + aladinProductData.itemId());
+                            OffshopCheckResult offshopCheckResult = aladinProductData.getHistoryFirst();
+                            System.out.println(offshopCheckResult.getTimestamp().withNano(0) + " : " + aladinProductData.itemId());
                         });
             });
         });
+        model.subscribeProductStockChanges(keySet -> {
+            System.out.print("Product stock changed : ");
+            keySet.forEach(key -> System.out.print(key + " "));
+            System.out.println();
+        });
+        
         System.out.println("run...");
         model.run(5, TimeUnit.SECONDS);
-
-        ScheduledExecutorService timer = Executors.newScheduledThreadPool(1);
-
-        timer.schedule(() -> {
-            model.shutdown();
-            timer.shutdown();
-            System.out.println("shutdown!");
-        }, 1, TimeUnit.MINUTES);
+        
+        try (ScheduledExecutorService timer = Executors.newScheduledThreadPool(1)) {
+            timer.schedule(() -> {
+                model.shutdown();
+                System.out.println("shutdown!");
+            }, 21, TimeUnit.SECONDS);
+        }
     }
 }
