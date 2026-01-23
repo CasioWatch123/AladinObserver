@@ -4,7 +4,7 @@ plugins {
 }
 
 application {
-    mainClass = 'com.github.CasioWatch123.AladinObserver.Main'
+    mainClass = 'com.github.casiowatch123.aladinobserver.Main'
 }
 
 group = 'org.example'
