@@ -13,7 +13,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
-public final class OffShopProductTrayModel {
+public final class OffShopProductTrayService {
     private final ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(2);
     private final ExecutorService executor = Executors.newSingleThreadExecutor();;
     private final ProductTray tray;
@@ -32,7 +32,7 @@ public final class OffShopProductTrayModel {
     private final AtomicBoolean shutdownFlag = new AtomicBoolean(false);
 
 
-    public OffShopProductTrayModel(ProductTray tray, DataStorageFactory dataStorageFactory) {
+    public OffShopProductTrayService(ProductTray tray, DataStorageFactory dataStorageFactory) {
         scheduledThreadPoolExecutor.setRemoveOnCancelPolicy(true);
         scheduledThreadPoolExecutor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
         scheduledThreadPoolExecutor.setContinueExistingPeriodicTasksAfterShutdownPolicy(false);
@@ -138,7 +138,7 @@ public final class OffShopProductTrayModel {
     private void updateTick() {
         try {
             tray.updateAllAsync().whenCompleteAsync((V, T) -> {
-                publish(tray.getTrayData());
+                publishTray(tray.getTrayData());
 
                 //notify changed product
                 Set<AladinProductData> changedProductDataSet = new HashSet<>();
@@ -158,13 +158,13 @@ public final class OffShopProductTrayModel {
                 });
 
                 if (!changedProductDataSet.isEmpty()) {
-                    changedProductSubscribers.forEach(consumer -> consumer.accept(changedProductDataSet));
+                    changedProductSubscribers.forEach(consumer -> consumer.accept(Set.copyOf(changedProductDataSet)));
                 }
             }, executor);
         } catch (RejectedExecutionException ignored) {}
     }
     
-    private void publish(Set<AladinProductData> aladinProductDataSet) {
+    private void publishTray(Set<AladinProductData> aladinProductDataSet) {
         try {
             executor.execute(() -> {
                 if(shutdownFlag.get()) {

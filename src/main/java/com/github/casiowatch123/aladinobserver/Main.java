@@ -3,7 +3,7 @@ package com.github.casiowatch123.aladinobserver;
 import com.github.casiowatch123.aladinobserver.log.Logger;
 import com.github.casiowatch123.aladinobserver.model.config.ConfigElement;
 import com.github.casiowatch123.aladinobserver.model.config.ConfigRegistry;
-import com.github.casiowatch123.aladinobserver.model.offshop.OffShopProductTrayModel;
+import com.github.casiowatch123.aladinobserver.model.offshop.OffShopProductTrayService;
 import com.github.casiowatch123.aladinobserver.model.offshop.impl.tray.ProductTrayImpl;
 import com.github.casiowatch123.aladinobserver.model.storage.DataStorageFactory;
 import com.github.casiowatch123.aladinobserver.model.ttbkey.TTBKeyHolder;
@@ -37,7 +37,7 @@ public class Main {
 
         TTBKeyHolder ttbKeyHolder = new TTBKeyHolder(dataStorageFactory);
         
-        OffShopProductTrayModel model = new OffShopProductTrayModel(new ProductTrayImpl(ttbKeyHolder), dataStorageFactory);
+        OffShopProductTrayService productTrayService = new OffShopProductTrayService(new ProductTrayImpl(ttbKeyHolder), dataStorageFactory);
 
 
         ConfigRegistry configRegistry = new ConfigRegistry(dataStorageFactory);
@@ -46,9 +46,9 @@ public class Main {
                 Boolean.class, 
                 flag -> {
                     if (flag) {
-                        model.run();
+                        productTrayService.run();
                     } else {
-                        model.stop();
+                        productTrayService.stop();
                     }
                 }, 
                 Boolean::equals,
@@ -58,7 +58,7 @@ public class Main {
         
         ConfigElement<Long> runPeriodConfigElement = new ConfigElement<>(
                 Long.class, 
-                period -> model.setPeriod(period, TimeUnit.SECONDS), 
+                period -> productTrayService.setPeriod(period, TimeUnit.SECONDS), 
                 Long::equals, 
                 l -> Long.toString(l), 
                 s -> {
@@ -75,11 +75,11 @@ public class Main {
         
         
 //        ttbKeyHolder.setTTBKey(<ttbKey>);
-//        model.addProduct(GoF);
-//        model.addProduct(KOSMOS);
+//        productTrayService.addProduct(GoF);
+//        productTrayService.addProduct(KOSMOS);
 
         System.out.println("subscribing...");
-        model.subscribeTray(dataset -> {
+        productTrayService.subscribeTray(dataset -> {
             if (dataset.isEmpty()) {
                 System.out.println("is empty!");
                 return;
@@ -90,7 +90,7 @@ public class Main {
             dataset.forEach(data -> System.out.print(data.itemId() + " "));
             System.out.println();
         });
-        model.subscribeProductStockChanges(dataset -> {
+        productTrayService.subscribeProductStockChanges(dataset -> {
             System.out.print("+Stock changed : ");
             dataset.forEach(data -> System.out.print(data.itemId() + " "));
             System.out.println();
@@ -121,7 +121,7 @@ public class Main {
             timer.schedule(() -> {
                 System.out.println("shutdown...");
                 configRegistry.apply(RUN_PERIOD_ID, 5L);
-                model.shutdown();
+                productTrayService.shutdown();
                 System.out.println("shutdown!");
             }, 3, TimeUnit.MINUTES);
         }

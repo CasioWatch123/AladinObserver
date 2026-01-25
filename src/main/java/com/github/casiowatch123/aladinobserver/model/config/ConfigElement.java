@@ -6,7 +6,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public final class ConfigElement<T> {
+public class ConfigElement<T> {
     private final Class<T> type;
     private final Consumer<T> applier;
     private final BiPredicate<T, T> equals;

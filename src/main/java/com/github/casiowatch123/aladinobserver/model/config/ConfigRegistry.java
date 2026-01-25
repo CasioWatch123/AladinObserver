@@ -32,7 +32,10 @@ public final class ConfigRegistry {
                 }));
     }
     
-    public synchronized <T> void register(String configId, ConfigElement<T> element, T defaultValue) {
+    public synchronized <T> void register(
+            String configId, 
+            ConfigElement<T> element, 
+            T defaultValue) {
         if (configDataMap.containsKey(configId)) {
             element.init(configDataMap.get(configId));
         } else {
