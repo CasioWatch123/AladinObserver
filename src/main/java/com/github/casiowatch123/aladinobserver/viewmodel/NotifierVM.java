@@ -2,17 +2,19 @@ package com.github.casiowatch123.aladinobserver.viewmodel;
 
 import com.github.casiowatch123.aladinobserver.model.offshop.OffShopProductTrayService;
 import com.github.casiowatch123.aladinobserver.model.offshop.impl.products.AladinProductData;
+import com.github.casiowatch123.aladinobserver.model.config.StateRepo;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 public class NotifierVM {
     private final OffShopProductTrayService productTrayService;
     private final StateRepo stateRepo;
     
-    private final List<Consumer<Set<AladinProductData>>> subscribers = new ArrayList<>();
+    private final List<Consumer<Set<AladinProductData>>> subscribers = new CopyOnWriteArrayList<>();
     
     private Boolean flag;
     

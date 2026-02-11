@@ -1,20 +1,20 @@
 package com.github.casiowatch123.aladinobserver.model.offshop.impl.products.book;
 
 
+import com.github.casiowatch123.aladinobserver.log.Logger;
 import com.github.casiowatch123.aladinobserver.model.offshop.impl.products.AbstractAladinProduct;
 import com.github.casiowatch123.aladinobserver.model.offshop.impl.products.AladinProduct;
 import com.github.casiowatch123.aladinobserver.model.offshop.impl.products.exceptions.AladinAPIException;
 import com.github.casiowatch123.aladinobserver.model.offshop.impl.products.exceptions.ProductInitializeException;
 import com.github.casiowatch123.aladinobserver.model.offshop.impl.products.history.OffshopCheckResult;
 import com.github.casiowatch123.aladinobserver.model.offshop.impl.products.history.HistoryObjectDeque;
-import com.github.casiowatch123.aladinobserver.model.ttbkey.TTBKeyHolder;
 import com.github.casiowatch123.aladinobserver.model.ttbkey.TTBKeyService;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
-import org.apache.commons.imaging.Imaging;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -24,7 +24,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 
 public class Book  extends AbstractAladinProduct implements AladinProduct {
-    private static final Image defaultImage;
+    private static final BufferedImage defaultImage;
 
     //Initializing default cover image
     static {
@@ -41,7 +41,7 @@ public class Book  extends AbstractAladinProduct implements AladinProduct {
                  URI imageURI,
                  String itemId,
                  String itemName,
-                 Image defaultImage, 
+                 BufferedImage defaultImage,
                  TTBKeyService ttbKeyService) {
         super(historyObjectDeque, imageURI, itemId, itemName, defaultImage, ttbKeyService);
     }
@@ -71,7 +71,7 @@ public class Book  extends AbstractAladinProduct implements AladinProduct {
 
             URI imageURI;
             String itemName;
-            Image cover;
+            BufferedImage cover;
             
             JsonObject itemJsonObject = responseJson.getAsJsonArray("item").get(0).getAsJsonObject();
             
@@ -91,7 +91,7 @@ public class Book  extends AbstractAladinProduct implements AladinProduct {
         }
     }
     
-    private static Image loadImage(URI imageURI) throws InterruptedException {
+    private static BufferedImage loadImage(URI imageURI) throws InterruptedException {
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(imageURI)
@@ -101,8 +101,29 @@ public class Book  extends AbstractAladinProduct implements AladinProduct {
 
             HttpResponse<byte[]> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofByteArray());
 
-            return Imaging.getBufferedImage(response.body());
+            if (response.statusCode() != 200) {
+                throw new IOException("HTTP " + response.statusCode());
+            }
+
+            String contentType = response.headers()
+                    .firstValue("Content-Type")
+                    .orElse("");
+
+            if (!contentType.startsWith("image/")) {
+                throw new IOException("Not an image: " + contentType);
+            }
+
+            byte[] body = response.body();
+
+            if (body.length > MAX_IMAGE_BYTES) {
+                throw new IOException("Image too large: " + body.length);
+            }
+
+            try (ByteArrayInputStream in = new ByteArrayInputStream(body)) {
+                return ImageIO.read(in);
+            }
         } catch (IOException e) {
+            Logger.getInstance().writeLog(e);
             return defaultImage;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

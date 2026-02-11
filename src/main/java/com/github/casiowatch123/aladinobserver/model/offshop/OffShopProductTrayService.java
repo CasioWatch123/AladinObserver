@@ -14,15 +14,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 public final class OffShopProductTrayService {
-    private final ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(2);
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();;
+    private final ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(1);
+    private final ExecutorService ioExecutor = Executors.newSingleThreadExecutor();
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final ProductTray tray;
 
     private final DataStorage dataStorage;
     private final String storageId = "tray_itemid_set";
     
     private final ObservableTray observableTray;
-    private final List<Consumer<Set<AladinProductData>>> changedProductSubscribers = new ArrayList<>();
+    private final List<Consumer<Set<AladinProductData>>> changedProductSubscribers = new CopyOnWriteArrayList<>();
     
     private TimeUnit timeUnit;
     private long period;
@@ -50,20 +51,11 @@ public final class OffShopProductTrayService {
         try {
             executor.execute(() -> {
                 Set<String> oldKeySet = new HashSet<>(tray.getKeySet());
-                
+
                 tray.addProduct(itemId);
-                
+
                 if (!oldKeySet.equals(tray.getKeySet())) {
-                    dataStorage.write(writer -> {
-                        tray.getKeySet().forEach(trayItemId -> {
-                            try {
-                                writer.write(trayItemId);
-                                writer.newLine();
-                            } catch (IOException e) {
-                                Logger.getInstance().writeLog(e);
-                            }
-                        });
-                    });
+                    saveKeySet();
                 }
             });
         } catch (RejectedExecutionException ignored) {}
@@ -73,20 +65,11 @@ public final class OffShopProductTrayService {
         try {
             executor.execute(() -> {
                 Set<String> oldKeySet = new HashSet<>(tray.getKeySet());
-                
+
                 tray.removeProduct(itemId);
 
                 if (!oldKeySet.equals(tray.getKeySet())) {
-                    dataStorage.write(writer -> {
-                        tray.getKeySet().forEach(trayItemId -> {
-                            try {
-                                writer.write(trayItemId);
-                                writer.newLine();
-                            } catch (IOException e) {
-                                Logger.getInstance().writeLog(e);
-                            }
-                        });
-                    });
+                    saveKeySet();
                 }
             });
         } catch (RejectedExecutionException ignored) {}
@@ -192,6 +175,23 @@ public final class OffShopProductTrayService {
     }
     
     
+    private void saveKeySet() {
+        try {
+            ioExecutor.execute(() -> {
+                dataStorage.write(writer -> {
+                    tray.getKeySet().forEach(trayItemId -> {
+                        try {
+                            writer.write(trayItemId);
+                            writer.newLine();
+                        } catch (IOException e) {
+                            Logger.getInstance().writeLog(e);
+                        }
+                    });
+                });
+            });
+        } catch (RejectedExecutionException ignored) {}
+    }
+    
     public void stop() {
         try {
             executor.execute(() -> {
@@ -222,6 +222,7 @@ public final class OffShopProductTrayService {
         
         scheduledThreadPoolExecutor.shutdown();
         executor.shutdown();
+        ioExecutor.shutdown();
         tray.shutdown();
     }
     

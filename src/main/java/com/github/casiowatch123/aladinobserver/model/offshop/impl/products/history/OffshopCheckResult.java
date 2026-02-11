@@ -11,16 +11,16 @@ public class OffshopCheckResult {
     
     private final String itemId;
     private final LocalDateTime timestamp;
-    private final List<String> OffshopList;
+    private final List<String> offshopList;
     
     
     public OffshopCheckResult(String itemId, List<String> OffshopList, LocalDateTime timestamp) {
         this.itemId = itemId;
         this.timestamp = timestamp;
         if (OffshopList == null || OffshopList.isEmpty()) {
-            this.OffshopList = EMPTY_ARRAY;
+            this.offshopList = EMPTY_ARRAY;
         } else {
-            this.OffshopList = OffshopList;
+            this.offshopList = List.copyOf(OffshopList);
         }
     }
     
@@ -39,12 +39,14 @@ public class OffshopCheckResult {
     public static OffshopCheckResult getExceptionalCheckResult(String itemId) {
         return new OffshopCheckResult(itemId, EXCEPTION_ARRAY, LocalDateTime.now());
     }
+    
+    
     public String getItemId() {
         return itemId;
     }
     
     public List<String> getOffshopList() {
-        return Collections.unmodifiableList(OffshopList);
+        return Collections.unmodifiableList(offshopList);
     }
 
     public LocalDateTime getTimestamp() {
@@ -52,6 +54,10 @@ public class OffshopCheckResult {
     }
     
     public Boolean isExceptional() {
-        return this.OffshopList.contains("exception occurred");
+        return this.offshopList.equals(EXCEPTION_ARRAY);
+    }
+    
+    public Boolean isEmpty() {
+        return this.offshopList.isEmpty();
     }
 }

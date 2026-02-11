@@ -41,8 +41,8 @@ public final class ProductTrayImpl implements ProductTray {
         Map<String, CompletableFuture<OffshopCheckResult>> completableFutureMap = new HashMap<>();
         
         productMap.forEach((key, product) -> 
-                completableFutureMap.put(key, product.updateAsync(asyncExecutor)
-        ));
+                completableFutureMap.put(key, product.updateAsync(asyncExecutor))
+        );
         
         return CompletableFuture
                 .allOf(completableFutureMap.values().toArray(CompletableFuture<?>[]::new))
@@ -61,7 +61,7 @@ public final class ProductTrayImpl implements ProductTray {
     @Override
     public Set<AladinProductData> getTrayData() {
         return productMap.values().stream()
-                .map(product -> (AladinProductData) product)
+                .map(AladinProduct::getData)
                 .collect(Collectors.toSet());
     }
 

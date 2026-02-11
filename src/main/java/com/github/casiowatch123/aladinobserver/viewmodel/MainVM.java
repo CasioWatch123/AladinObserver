@@ -3,6 +3,7 @@ package com.github.casiowatch123.aladinobserver.viewmodel;
 import com.github.casiowatch123.aladinobserver.model.config.ConfigRegistry;
 import com.github.casiowatch123.aladinobserver.model.offshop.OffShopProductTrayService;
 import com.github.casiowatch123.aladinobserver.model.ttbkey.TTBKeyHolder;
+import com.github.casiowatch123.aladinobserver.model.config.StateRepo;
 
 public final class MainVM {
     private final TTBKeyHolder ttbKeyHolder;
@@ -17,15 +18,16 @@ public final class MainVM {
     public MainVM(
             TTBKeyHolder ttbKeyHolder, 
             OffShopProductTrayService productTrayService, 
-            ConfigRegistry configRegistry
+            ConfigRegistry configRegistry, 
+            StateRepo stateRepo
     ) {
         this.ttbKeyHolder = ttbKeyHolder;
         this.productTrayService = productTrayService;
-        this. configRegistry = configRegistry;
+        this.configRegistry = configRegistry;
+        this.stateRepo = stateRepo;
         
-        this.stateRepo = new StateRepo();
         this.productTrayVM = new ProductTrayVM(productTrayService);
-        this.configVM = new ConfigVM(productTrayService, configRegistry, stateRepo);
+        this.configVM = new ConfigVM(productTrayService, configRegistry);
         this.notifierVM = new NotifierVM(productTrayService, stateRepo);
     }
     
@@ -43,8 +45,10 @@ public final class MainVM {
     
     
     
-    
     public void setTtbKey(String ttbKey) {
         ttbKeyHolder.setTTBKey(ttbKey);
+    }
+    public String getTtbKey() {
+        return ttbKeyHolder.getTTBKey();
     }
 }

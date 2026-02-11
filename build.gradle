@@ -1,10 +1,11 @@
 plugins {
     id 'java'
     id 'application'
+    id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 application {
-    mainClass = 'com.github.casiowatch123.aladinobserver.Main'
+    mainClass = 'com/github/casiowatch123/aladinobserver/Application'
 }
 
 group = 'org.example'
@@ -21,7 +22,7 @@ dependencies {
     implementation("org.jsoup:jsoup:1.21.2")
     implementation("commons-io:commons-io:2.21.0")
     implementation("com.google.code.gson:gson:2.13.2")
-    implementation("org.apache.commons:commons-imaging:1.0.0-alpha6")
+    implementation("com.formdev:flatlaf:3.7")
 }
 
 test {

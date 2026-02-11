@@ -4,10 +4,12 @@ import com.github.casiowatch123.aladinobserver.log.Logger;
 import com.github.casiowatch123.aladinobserver.model.ModelPolicies;
 import com.github.casiowatch123.aladinobserver.model.offshop.impl.localio.serialization.LocalDateTimeDeserializer;
 import com.github.casiowatch123.aladinobserver.model.offshop.impl.localio.serialization.LocalDateTimeSerializer;
+import com.github.casiowatch123.aladinobserver.model.offshop.impl.localio.serialization.OffshopCheckResultDeserializer;
 import com.github.casiowatch123.aladinobserver.model.offshop.impl.products.history.OffshopCheckResult;
 import com.github.casiowatch123.aladinobserver.model.offshop.impl.products.history.HistoryObjectDeque;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import org.apache.commons.io.input.ReversedLinesFileReader;
@@ -26,6 +28,7 @@ public class OffshopCheckResultIO implements IO<OffshopCheckResult> {
     private static final Gson GSON_PARSER = new GsonBuilder()
             .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeSerializer())
             .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeDeserializer())
+            .registerTypeAdapter(OffshopCheckResult.class, new OffshopCheckResultDeserializer())
             .create();
 
 
@@ -87,9 +90,9 @@ public class OffshopCheckResultIO implements IO<OffshopCheckResult> {
     private static boolean isValidLine(String line) {
         Type type = new TypeToken<HistoryObject<OffshopCheckResult>>() {}.getType();
         try {
-            GSON_PARSER.fromJson(line, type);
+            HistoryObject<OffshopCheckResult> historyObject = GSON_PARSER.fromJson(line, type);
             return true;
-        } catch (JsonSyntaxException e) {
+        } catch (JsonParseException e) {
             return false;
         }
     }
