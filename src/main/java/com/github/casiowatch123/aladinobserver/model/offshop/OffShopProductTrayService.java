@@ -55,6 +55,7 @@ public final class OffShopProductTrayService {
                 tray.addProduct(itemId);
 
                 if (!oldKeySet.equals(tray.getKeySet())) {
+                    observableTray.set(tray.getTrayData());
                     saveKeySet();
                 }
             });
@@ -69,6 +70,7 @@ public final class OffShopProductTrayService {
                 tray.removeProduct(itemId);
 
                 if (!oldKeySet.equals(tray.getKeySet())) {
+                    observableTray.set(tray.getTrayData());
                     saveKeySet();
                 }
             });
